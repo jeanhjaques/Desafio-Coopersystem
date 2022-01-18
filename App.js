@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 //screens
 import Home from './src/Home.js';
+import ResgatePersonalizado from './src/ResgatePersonalizado.js';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,7 @@ export default function App() {
     <NavigationContainer theme={MyTheme}>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={Home} options={{ title: 'Resgate' }} />
+        <Stack.Screen name="Resgate Personalizado" component={ResgatePersonalizado} options={{ title: 'Resgate' }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

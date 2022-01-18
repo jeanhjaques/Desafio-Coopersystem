@@ -1,26 +1,20 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { Avatar, Button, Card, Title, Paragraph } from 'react-native-paper';
-import { formatNumber } from '../lib/format';
+import { useLayoutEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 
-export default function HomeScreen() {
+//componentes ou libs
+import CardListaInvestimentos from './components/CardListaInvestimentos'
+
+
+export default function HomeScreen({ navigation }) {
     const [listaInvestimentos, setListaInvestimentos] = useState([])
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         fetch('https://run.mocky.io/v3/ca4ec77d-b941-4477-8a7f-95d4daf7a653')
             .then((response) => response.json())
             .then((json) => setListaInvestimentos(json.response.data))
             .catch((error) => console.error(error))
-            .finally(() => console.log(listaInvestimentos));
-
     }, []);
-
-    //converte string para moeda
-    function converteParaMoeda(valor) {
-        let valorConvertido = formatNumber(valor)
-        return valorConvertido
-    }
 
     return (
         <View style={styles.container}>
@@ -37,9 +31,9 @@ export default function HomeScreen() {
                     data={listaInvestimentos.listaInvestimentos}
                     keyExtractor={({ nome }, index) => nome}
                     renderItem={({ item }) => (
-                        <Card style={ styles.card }>
-                            <Card.Title title={item.nome} subtitle={item.objetivo} right={() => { return (<View style={styles.cardValor} ><Text style={styles.cardValorText}>{converteParaMoeda(item.saldoTotal)}</Text></View>) }} />
-                        </Card>
+                        <TouchableOpacity onPress={() => navigation.navigate('Resgate Personalizado', { listaAcoes: item.acoes, nome: item.nome, saldoTotal: item.saldoTotal })}>
+                            <CardListaInvestimentos nome={item.nome} subtitulo={item.objetivo} valor={item.saldoTotal} />
+                        </TouchableOpacity>
                     )}
                 />
             </View>
@@ -61,18 +55,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textTransform: 'uppercase',
         color: 'grey'
-    },
-    card: {
-        marginBottom: 1
-    },
-    cardValor: {
-        marginHorizontal: 5
-    },
-    cardValorText: {
-        textTransform: 'uppercase',
-        fontSize: 15,
-        fontWeight: 'bold',
     }
-
 })
 
