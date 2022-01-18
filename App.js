@@ -23,7 +23,7 @@ export default function App() {
   return (
     <NavigationContainer theme={MyTheme}>
       <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={Home} options={{ title: 'Desafio Coopersystem' }} />
+        <Stack.Screen name="Home" component={Home} options={{ title: 'Resgate' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
