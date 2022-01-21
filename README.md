@@ -2,8 +2,8 @@
 
 * Esse projeto foi implementado como desafio para a Coopersystem, consiste num gerenciador de investimentos.
 
-##Requisitos
+## Requisitos
 * NodeJs versão 14 ou superior
 
-##Como executar
+## Como executar
 * Execute a aplicação através do comando "yarn start"
