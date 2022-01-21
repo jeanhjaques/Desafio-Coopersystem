@@ -1,22 +1,43 @@
-import { useState, useLayoutEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, SafeAreaView, Button } from 'react-native';
-import { TextInput, Modal } from 'react-native-paper';
+import { useState, useEffect, useLayoutEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
+import { Modal } from 'react-native-paper';
 import CurrencyInput from 'react-native-currency-input';
-
-
-
+import { useForm, Controller } from 'react-hook-form';
 
 //componentes ou libs
 import { formatNumber } from '../lib/format';
 
 export default function ResgatePersonalizado({ navigation, route }) {
     const [listaAcoes, setListaAcoes] = useState([]);
-    const [valorResgate, setValorResgate] = useState(0);
+
+    const { register, handleSubmit, control, reset, formState: { errors } } = useForm()
+
+    function isNumber(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
 
     //configurações dos modais
     const [visibilidadeModalErro, setVisibilidadeModalErro] = useState(false);
     const showModalErro = () => setVisibilidadeModalErro(true);
     const hideModalErro = () => setVisibilidadeModalErro(false);
+
+    //verifica se algum campo passou do valor máximo e exibe o modal adequado
+    const onSubmit = data => {
+        console.log(data)
+        showModalErro(true)
+    };
+
+    const onChange = arg => {
+        return {
+            value: arg.nativeEvent.text,
+        };
+    };
+
+    useEffect(() => {
+        for (let item of route.params.listaAcoes) {
+            register(item.id)
+        }
+    }, [register])
 
     useLayoutEffect(() => {
         setListaAcoes(route.params.listaAcoes)
@@ -43,37 +64,54 @@ export default function ResgatePersonalizado({ navigation, route }) {
 
                 <Text style={styles.titulo}>Resgate do seu jeito</Text>
                 <FlatList
-                data={listaAcoes}
-                keyExtractor={({ id }, index) => id}
-                renderItem={({ item }) => (
-                    <View style={styles.blocoAcao}>
-                        <View style={styles.conteudo}>
-                            <Text style={styles.tituloConteudo}>Ação</Text>
-                            <Text style={styles.informacaoConteudo}>{item.nome}</Text>
+                    data={listaAcoes}
+                    keyExtractor={({ id }, index) => id}
+                    renderItem={({ item }) => (
+                        <View style={styles.blocoAcao}>
+                            <View style={styles.conteudo}>
+                                <Text style={styles.tituloConteudo}>Ação</Text>
+                                <Text style={styles.informacaoConteudo}>{item.nome}</Text>
+                            </View>
+                            <View style={styles.conteudo}>
+                                <Text style={styles.tituloConteudo}>Saldo Total Disponível</Text>
+                                <Text style={styles.informacaoConteudo}>{converteParaMoeda(route.params.saldoTotal * (item.percentual / 100))}</Text>
+                            </View>
+                            <View style={styles.conteudo}>
+                                <Text style={styles.informacaoConteudo}>Valor a resgatar</Text>
+                            </View>
+                            <View>
+                                <Controller
+                                    control={control}
+                                    render={({ field: { onChange, onBlur, value } }) => (
+                                        <CurrencyInput
+                                            style={styles.input}
+                                            mode="focused"
+                                            color='white'
+                                            prefix="R$"
+                                            label="Valor a resgatar"
+                                            value={value}
+                                            minValue={0}
+                                            onChangeValue={onChange}
+                                            style={styles.input}
+                                        ></CurrencyInput>
+
+                                    )}
+                                    name={item.id}
+                                    rules={{}}
+                                />
+                            </View>
                         </View>
-                        <View style={styles.conteudo}>
-                            <Text style={styles.tituloConteudo}>Saldo Total Disponível</Text>
-                            <Text style={styles.informacaoConteudo}>{converteParaMoeda(route.params.saldoTotal*(item.percentual/100))}</Text>
-                        </View>
-                        <View style={styles.conteudo}>
-                            <Text style={styles.informacaoConteudo}>Valor a resgatar</Text>
-                        </View>
-                        <View>
-                            <CurrencyInput error={parseFloat(valorResgate) > parseFloat(route.params.saldoTotal*(item.percentual/100)) } style={styles.input} mode="focused" color='white' prefix="R$" label="Valor a resgatar" value={valorResgate} onChangeValue={valorResgate => setValorResgate(valorResgate)} style={styles.input}   
-                            ></CurrencyInput>
-                        </View>
-                    </View>
-                )}
+                    )}
                 />
             </View>
             <View>
-                <Button title='Resgatar' onPress={showModalErro}>Resgatar</Button>
+                <Button title='Resgatar' onPress={handleSubmit(onSubmit)}>Resgatar</Button>
             </View>
             <Modal visible={visibilidadeModalErro} onDismiss={hideModalErro} contentContainerStyle={styles.containerModal}>
-                    <Text style={styles.tituloModal}>Dados Invalidos</Text>
-                    <Text style={styles.conteudoModal}>Você preencheu um ou mais campos com valores fora dos permitidos</Text>
-                    <Button title='Corrigir' onPress={hideModalErro}></Button>
-                </Modal>
+                <Text style={styles.tituloModal}>Dados Invalidos</Text>
+                <Text style={styles.conteudoModal}>Você preencheu um ou mais campos com valores fora dos permitidos</Text>
+                <Button title='Corrigir' onPress={hideModalErro}></Button>
+            </Modal>
         </View>
     )
 }
@@ -114,19 +152,20 @@ const styles = StyleSheet.create({
     blocoAcao: {
         marginBottom: 5,
     },
-    input:{
+    input: {
         backgroundColor: 'white',
         color: 'black',
         fontWeight: 'bold',
         fontSize: 16,
+        paddingHorizontal: 15,
+        paddingVertical: 5
+    },
+    containerModal: {
+        backgroundColor: 'white',
+        padding: 20,
         marginHorizontal: 15
     },
-    containerModal:{
-        backgroundColor: 'white', 
-        padding: 20, 
-        marginHorizontal: 15
-    },
-    tituloModal:{
+    tituloModal: {
         fontWeight: 'bold',
         fontSize: 16,
         marginHorizontal: 15,
@@ -134,7 +173,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         padding: 5,
     },
-    conteudoModal:{
+    conteudoModal: {
         color: 'grey',
         fontWeight: 'bold',
         fontSize: 14,
