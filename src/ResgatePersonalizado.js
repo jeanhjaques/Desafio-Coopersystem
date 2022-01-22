@@ -12,20 +12,36 @@ export default function ResgatePersonalizado({ navigation, route }) {
 
     const { register, handleSubmit, control, reset, formState: { errors } } = useForm()
 
+    //recebe uma variável e verifica se é um número
     function isNumber(n) {
         return !isNaN(parseFloat(n)) && isFinite(n);
     }
 
     //configurações dos modais
     const [visibilidadeModalErro, setVisibilidadeModalErro] = useState(false);
+    const [visibilidadeModalSucesso, setVisibilidadeModalSucesso] = useState(false)
     const showModalErro = () => setVisibilidadeModalErro(true);
     const hideModalErro = () => setVisibilidadeModalErro(false);
+    const showModalSucesso = () => setVisibilidadeModalSucesso(true);
+    const hideModalSucesso = () => setVisibilidadeModalSucesso(false);
 
     //verifica se algum campo passou do valor máximo e exibe o modal adequado
-    const onSubmit = data => {
-        console.log(data)
-        showModalErro(true)
-    };
+    //não está funcionando 100% devido a uma falha de sincronismo que ainda preciso tratar
+    const [listaErros, setListaErros] = useState("");
+    function onSubmit(data) {
+        for (let item of route.params.listaAcoes) {
+            if (parseFloat(data[item.id]) > parseFloat(route.params.saldoTotal * (item.percentual / 100))) {
+                const campoInvalido = "id " + item.id + " nome " + item.nome
+                setListaErros(listaErros + campoInvalido)
+            }
+        }
+        if (listaErros == "") {
+            showModalSucesso()
+        }
+        else {
+            showModalErro()
+        }
+    }
 
     const onChange = arg => {
         return {
@@ -109,7 +125,11 @@ export default function ResgatePersonalizado({ navigation, route }) {
             </View>
             <Modal visible={visibilidadeModalErro} onDismiss={hideModalErro} contentContainerStyle={styles.containerModal}>
                 <Text style={styles.tituloModal}>Dados Invalidos</Text>
-                <Text style={styles.conteudoModal}>Você preencheu um ou mais campos com valores fora dos permitidos</Text>
+                <Text style={styles.conteudoModal}>{listaErros}</Text>
+                <Button title='Corrigir' onPress={hideModalErro}></Button>
+            </Modal>
+            <Modal visible={visibilidadeModalSucesso} onDismiss={hideModalSucesso} contentContainerStyle={styles.containerModal}>
+                <Text style={styles.tituloModal}>Sucesso</Text>
                 <Button title='Corrigir' onPress={hideModalErro}></Button>
             </Modal>
         </View>
