@@ -28,19 +28,32 @@ export default function ResgatePersonalizado({ navigation, route }) {
     //verifica se algum campo passou do valor máximo e exibe o modal adequado
     //não está funcionando 100% devido a uma falha de sincronismo que ainda preciso tratar
     const [listaErros, setListaErros] = useState("");
-    function onSubmit(data) {
-        for (let item of route.params.listaAcoes) {
-            if (parseFloat(data[item.id]) > parseFloat(route.params.saldoTotal * (item.percentual / 100))) {
-                const campoInvalido = "id " + item.id + " nome " + item.nome
-                setListaErros(listaErros + campoInvalido)
-            }
-        }
-        if (listaErros == "") {
+
+    async function onSubmit(data) {
+        const erros = await verificarErros(data);
+        if(erros.length == 0){
+            console.log("nenhum erro")
             showModalSucesso()
         }
-        else {
+        else{
+            setListaErros(erros)
             showModalErro()
         }
+    }
+
+    async function verificarErros(data){
+        let listaErrosTemp = []
+        for (let item of route.params.listaAcoes) {
+            if (parseFloat(data[item.id]) > parseFloat(route.params.saldoTotal * (item.percentual / 100))) {
+                const objetoErro = {
+                    "idAcao": item.id,
+                    "nome": item.nome,
+                    "valorMaximo": converteParaMoeda(route.params.saldoTotal * (item.percentual / 100))
+                }
+                listaErrosTemp.push(objetoErro)
+            }
+        }
+        return listaErrosTemp;
     }
 
     const onChange = arg => {
@@ -107,6 +120,7 @@ export default function ResgatePersonalizado({ navigation, route }) {
                                             label="Valor a resgatar"
                                             value={value}
                                             minValue={0}
+                                            maxValue={parseFloat(route.params.saldoTotal * (item.percentual / 100))}
                                             onChangeValue={onChange}
                                             style={styles.input}
                                         ></CurrencyInput>
@@ -125,12 +139,22 @@ export default function ResgatePersonalizado({ navigation, route }) {
             </View>
             <Modal visible={visibilidadeModalErro} onDismiss={hideModalErro} contentContainerStyle={styles.containerModal}>
                 <Text style={styles.tituloModal}>Dados Invalidos</Text>
-                <Text style={styles.conteudoModal}>{listaErros}</Text>
-                <Button title='Corrigir' onPress={hideModalErro}></Button>
+                <Text style={styles.subtituloModal}>Você preencheu um ou mais campos com valor acima do permitido:</Text>
+                <FlatList
+                    data={listaErros}
+                    keyExtractor={({ nome }, index) => nome}
+                    renderItem={({ item }) => (
+                        <View>
+                            <Text style={styles.conteudoModal}>{item.nome}: Valor Máximo de R$ {item.valorMaximo}</Text>
+                        </View>
+                        )}                
+                     />
+                <Button color='red' title='Corrigir' onPress={hideModalErro}></Button>
             </Modal>
             <Modal visible={visibilidadeModalSucesso} onDismiss={hideModalSucesso} contentContainerStyle={styles.containerModal}>
-                <Text style={styles.tituloModal}>Sucesso</Text>
-                <Button title='Corrigir' onPress={hideModalErro}></Button>
+                <Text style={styles.tituloModal}>Resgate Efetuado!</Text>
+                <Text style={styles.conteudoModal}>O valor solicitado estará em sua conta em sua conta em até 5 dias úteis!</Text>
+                <Button title='Novo Resgate' onPress={() => navigation.navigate('Home')}></Button>
             </Modal>
         </View>
     )
@@ -170,7 +194,8 @@ const styles = StyleSheet.create({
         color: 'grey'
     },
     blocoAcao: {
-        marginBottom: 5,
+        marginBottom: 50,
+        flex: 1
     },
     input: {
         backgroundColor: 'white',
@@ -182,8 +207,8 @@ const styles = StyleSheet.create({
     },
     containerModal: {
         backgroundColor: 'white',
-        padding: 20,
-        marginHorizontal: 15
+        padding: 10,
+        margin: 15
     },
     tituloModal: {
         fontWeight: 'bold',
@@ -193,12 +218,17 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         padding: 5,
     },
-    conteudoModal: {
-        color: 'grey',
+    subtituloModal: {
         fontWeight: 'bold',
         fontSize: 14,
         marginHorizontal: 15,
         textAlign: 'center',
-        padding: 15,
+        padding: 5,
+    },
+    conteudoModal: {
+        color: 'grey',
+        fontWeight: 'bold',
+        fontSize: 12,
+        textAlign: 'center',
     }
 })
